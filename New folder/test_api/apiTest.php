@@ -19,9 +19,14 @@ function add_nums($a, $b){
 }
 
 
+function diagnostic(){
+	$message = array("Request Method" => $_SERVER["REQUEST_METHOD"], "Path Info" => $_SERVER["PATH_INFO"], "Parameters" => $_SERVER["QUERY_STRING"]);
+	
+	return $message;
+}
 
 // Found from http://blog.ijasoneverett.com/2013/02/rest-api-a-simple-php-tutorial/
-$possible_url = array("hello_world", "add_nums");
+$possible_url = array("hello_world", "add_nums", "diagnostic");
 
 $value = "An error has occurred";
 
@@ -38,6 +43,9 @@ if (isset($_GET["action"]) && in_array($_GET["action"], $possible_url))
 		  else
 			$value = array("items" => array(array("message" => "Missing Arguments")));
           break;
+      case "diagnostic":
+      	  $value = diagnostic();
+      	  break;
     }
 }
 
