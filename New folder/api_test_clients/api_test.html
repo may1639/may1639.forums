@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>API Tester</title>
+<script src="jquery-2.1.4.js"></script>
+</head>
+<body id="textBody">
+
+</body>
+
+<script>
+
+//	var stackStats = jQuery.getJSON('http://api.stackexchange.com/2.2/questions/33470924?order=desc&sort=activity&site=stackoverflow').done(function( data ){
+	//var stackStats = jQuery.getJSON('http://may1639.sd.ece.iastate.edu/api/apiTest.php?action=hello_world').done(function( data ){
+	var stackStats = jQuery.getJSON('http://may1639.sd.ece.iastate.edu/api/apiTest.php?action=add_nums&a=5&b=10').done(function( data ){
+
+	
+		var textBody = document.getElementById("textBody");
+	
+		var i;
+		//for( i = 0; i < data.length; i++ ){
+		$.each( data.items, function( i, item ){
+			
+			//var word = document.createTextNode(data[i].message);
+			var word = document.createTextNode(item.message);
+			textBody.appendChild(word);		
+			textBody.appendChild(document.createElement("br"));
+		});
+		//}
+	
+	alert(data.items);
+	});
+
+</script>
+</html>
