@@ -20,7 +20,7 @@ function add_nums($a, $b){
 
 
 function diagnostic(){
-	$message = array("Request Method" => $_SERVER["REQUEST_METHOD"], "Path Info" => $_SERVER["PATH_INFO"], "Parameters" => $_SERVER["QUERY_STRING"]);
+	$message = array("Request Method" => $_SERVER["REQUEST_METHOD"], "Path Info" => $_SERVER["PATH_INFO"], "Parameters" => $_SERVER["QUERY_STRING"], "GET" => $_GET, "POST" => $_POST);
 	
 	return $message;
 }
