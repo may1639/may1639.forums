@@ -1,6 +1,7 @@
 <?php
 
 header("access-control-allow-origin: *");
+header('Content-Type: application/json');//JSON-formatting
 
 function hello_world(){
 	
@@ -39,6 +40,9 @@ if (isset($_GET["action"]) && in_array($_GET["action"], $possible_url))
           break;
     }
 }
+
+//This line of code gzips everything presented as output
+ob_start('ob_gzhandler');
 
 //return JSON array
 exit(json_encode($value));
