@@ -1,238 +1,215 @@
 <?php
 define("IN_MYBB", 1);
 require_once "./global.php";
+require_once "./api_classes/users.php";
 header("access-control-allow-origin: *");
 header('Content-Type: application/json');//JSON-formatting
-
-$return_value = "An error has occurred";
 $valid_methods = array('users');
 $path = explode('/', ltrim($_SERVER['PATH_INFO'], "/"));
 
-
-
-/**
-* The class for a user.  Hoping to migrate to separate file location when we know how.
-* Data for this comes from: https://api.stackexchange.com/docs/types/user
-*/
-class User
+function return_error($id, $message, $name)
 {
-	//var $about_me;
-	var $accept_rate;
-	var $account_id;
-	var $age;
-	//var $answer_count;
-	var $badge_counts;
-	var $creation_time;
-	var $display_name;
-	//var $down_vote_count;
-	var $is_employee;
-	var $last_access_date;
-	var $last_modified_date;
-	var $link;
-	var $location;
-	var $profile_image;
-	//var $question_count;
-	var $reputation;
-	var $reputation_change_day;
-	var $reputation_change_month;
-	var $reputation_change_quarter;
-	var $reputation_change_week;
-	var $reputation_change_year;
-	var $timed_penalty_date;
-	//var $up_vote_count;
-	var $user_id;
-	var $user_type;
-	//var $view_count;
-	var $website_url;
+	$return_value = array('error_id' => $id, 'error_message' => $message, 'error_name' => $name);
+	ob_start('ob_gzhandler');
+	exit(json_encode($return_value));
+}
 
-	function __construct($row)
+function process_order()
+{
+	if(isset($_GET["order"]))
 	{
-		$this->$account_id = $row['uid'];
-		$this->$creation_time = $row['regdate'];
-		$this->$display_name = $row['username'];
-		/*$this->$ = $row[''];
-		$this->$ = $row[''];
-		$this->$ = $row[''];
-		$this->$ = $row[''];
-		$this->$ = $row[''];
-		$this->$ = $row[''];
-		$this->$ = $row[''];*/
-		
-		//var_dump($row);
+		if(!in_array($_GET["order"], array("asc", "desc")))
+			return_error(400, 'order', 'bad_parameter');
+		return $_GET["order"];
 	}
+	return "desc";
+}
+
+function process_sort()
+{
+	if(isset($_GET["sort"]))
+	{
+		if(!in_array($_GET["sort"], array("reputation", "creation", "name", "modified")))
+			return_error(400, 'sort', 'bad_parameter');
+		return $_GET["sort"];
+	}
+	return "reputation";
+}
+
+function process_date($date)
+{
+	if((false === filter_input(INPUT_GET, $date, FILTER_VALIDATE_INT)) || $_GET[$date] < 0)
+		return_error(400, $date, 'bad_parameter');
+	return $_GET[$date];
+}
+
+function process_min_max($sort, $min_max)
+{
+	if($sort == "name")
+	{
+		if(!is_string($_GET[$min_max]))
+			return_error(400, $min_max, 'bad_parameter');
+	}
+	else if(false === filter_input(INPUT_GET, $min_max, FILTER_VALIDATE_INT))
+			return_error(400, $min_max, 'bad_parameter');
+	return $_GET[$min_max];
+}
+
+function process_inname()
+{
+	if(!is_string($_GET["inname"]))
+		return_error(400, 'inname', 'bad_parameter');
+	return $_GET["inname"];
 }
 
 function users($database)//what should happen if the path starts with 'users'.
 {
-	$order = "desc";
-	if(isset($_GET["order"]))
-	{
-		if(!in_array($_GET["order"], array("asc", "desc")))
-			return array("Error Message" => "The 'order' parameter is invalid.");
-		$order = $_GET["order"];
-	}
-	$sort = "reputation";
-	if(isset($_GET["sort"]))
-	{
-		if(!in_array($_GET["sort"], array("reputation", "creation", "name", "modified")))
-			return array("Error Message" => "The 'sort' parameter is invalid.");
-		$sort = $_GET["sort"];
-	}
-
+	$order = process_order();
+	
+	$sort = process_sort();
+	
 	if(isset($_GET["fromdate"]))
-	{
-		if($_GET["fromdate"] < 0)
-			return array("Error Message" => "The 'fromdate' parameter is invalid.");
-		$fromdate = $_GET["fromdate"];
-	}
+		$fromdate = process_date('fromdate');
 
 	if(isset($_GET["todate"]))
-	{
-		if($_GET["todate"] < 0)
-			return array("Error Message" => "The 'todate' parameter is invalid.");
-		$todate = $_GET["todate"];
-	}
+		$todate = process_date('todate');
 
 	if(isset($_GET["min"]))
-	{
-		if($sort == "name")
-		{
-			if(!is_string($_GET["min"]))
-				return array("Error Message" => "The 'min' value is invalid.");
-		}
-		else if(false === filter_input(INPUT_GET, 'min', FILTER_VALIDATE_INT))
-				return array("Error Message" => "The 'min' parameter is invalid.");
-		$min = $_GET["min"];
-	}
+		$min = process_min_max($sort, 'min');
 
 	if(isset($_GET["max"]))
-	{
-		if($sort == "name")
-		{
-			if(!is_string($_GET["max"]))
-				return array("Error Message" => "The 'max' value is invalid.");
-		}
-		else if(false === filter_input(INPUT_GET, 'max', FILTER_VALIDATE_INT))
-				return array("Error Message" => "The 'max' parameter is invalid.");
-		$max = $_GET["max"];
-	}
+		$max = process_min_max($sort, 'max');
 
 	if(isset($_GET["inname"]))
-	{
-		if(!is_string($_GET["inname"]))
-			return array("Error Message" => "The 'inname' parameter is invalid.");
-		$inname = $_GET["inname"];
-	}
+		$inname = process_inname();
+	
 	$var_to_col_mapping = array("reputation" => "reputation", "creation" => "regdate", "name" => "username", "modified" => "lastactive");
+	
 	$query = "SELECT * FROM `mybb_users`";
-	$fr = isset($fromdate);
-	$to = isset($todate);
-	$mn = isset($min);
-	$mx = isset($max);
-	$in = isset($inname);
-	if($fr || $to || $mn || $mx || $in)
+	
+	if(isset($fromdate) || isset($todate) || isset($min) || isset($max) || isset($inname))
 	{
+		$use_and = false;
 		$query .= " WHERE";
 		
-		if($fr)
+		if(isset($fromdate))
 		{
 			$query .= " ".$var_to_col_mapping["creation"].">".$fromdate;
-			if($to || $mn || $mx || $in)
-				$query .= " AND";
+			$use_and = true;
 		}
 
-		if($to)
+		if(isset($todate))
 		{
+			if($use_and)
+				$query .= " AND";
 			$query .= " ".$var_to_col_mapping["creation"]."<".$todate;
-			if($mn || $mx || $in)
-				$query .= " AND";
+			$use_and = true;
 		}
 
-		if($mn)
+		if(isset($min))
 		{
+			if($use_and)
+				$query .= " AND";
 			$query .= " ".$var_to_col_mapping[$sort].">";
 			if($order == "name")
 				$query .= "\'".$min."\'";
 			else
 				$query .= $min;
-			if($mx || $in)
-				$query .= " AND";
+			$use_and = true;
 		}
 
-		if($mx)
+		if(isset($max))
 		{
+			if($use_and)
+				$query .= " AND";
 			$query .= " ".$var_to_col_mapping[$sort]."<";
 			if($order == "name")
 				$query .= "\'".$max."\'";
 			else
 				$query .= $max;
-			if($in)
-				$query .= " AND";
+			$use_and = true;
 		}
 
 		if($in)
+		{
+			if($use_and)
+				$query .= " AND";
 			$query .= " ".$var_to_col_mapping["name"]." LIKE '%".$inname."%'";
+		}
 	}
 
 	$query .= " ORDER BY ".$var_to_col_mapping[$sort];
+	
 	if($order == "desc")
-	{
 		$query .= " DESC";
-	}
-	//$query = "SELECT * FROM `mybb_users` LIMIT 0 , 30";
-	echo $query;
-	$results = $database->query($query);
-	while($row = mysql_fetch_array($results, MYSQL_ASSOC))
-		var_dump($row);
 
-	/*Perform after filtering statements*
-	$page = 1;
-	if(isset($_GET['page']))
-	{
-		$page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT);
-		if(false === $page)
-			$page = 1;
-		$page = max(1, $page);
-	}
+	$results = $database->query($query);
 
 	$pagesize = 30;
+	
 	if(isset($_GET['pagesize']))
 	{
-		$pagesize = filter_input(INPUT_GET, 'pagesize', FILTER_VALIDATE_INT);
-		if(false === $pagesize)
-			$pagesize = 30;
-		$pagesize = max(0, min(100, $pagesize));
+		if(false === filter_input(INPUT_GET, 'pagesize', FILTER_VALIDATE_INT))
+			return_error(400, 'pagesize', 'bad_parameter');
+		
+		$pagesize = max(0, min(100, $_GET["pagesize"]));
 	}
-	/**/
+
+	if(($pagesize < 1) || (mysql_num_rows($results) < 1))
+		return array();
+
+	$pagesize = min($pagesize, mysql_num_rows($results));
+	
+	$hard_limit = mysql_num_rows($results) / $pagesize;
+	
+	if(0 < mysql_num_rows($results) % $pagesize)
+		$hard_limit++;
+	
+	$page = 1;
+	
+	if(isset($_GET["page"]))
+	{
+		if(false === filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT))
+			return_error(400, 'page', 'bad_parameter');
+		
+		$page = max(1, min($hard_limit, $_GET["page"]));
+	}
+	
+	$query .= " LIMIT ".$pagesize." OFFSET ".($page - 1) * $pagesize;
+
+	$results = $database->query($query);
+	
+	$retval = array();
+	
+	while($row = mysql_fetch_array($results, MYSQL_ASSOC))
+	{
+		array_push($retval, new User($row));
+		//var_dump($row);
+	}
+
+	return $retval;
 }
 
 switch($path[0])//selects proper function to call.
 {
 	case 'users':
-		users($db);
+		$return_value = array("items" => users($db));
 		break;
 	
 	default:
 		break;
 }
-/*
-$results = $db->query("SELECT * FROM `mybb_users` LIMIT 0 , 30");
 
-$all_users = array();
-while ($row = mysql_fetch_array($results, MYSQL_ASSOC)) {
-	var_dump($row);
-	//array_push($all_users, new User($row));
-}
+if(!isset($return_value))
+	return_error(400, 'method', 'method_not_recognized');
 
-//var_dump($all_users);
+//var_dump(json_encode($return_value));
 
-/*
+/**/
 //This line of code gzips everything presented as output
 ob_start('ob_gzhandler');
 
 //return JSON array
 exit(json_encode($return_value));
-
 /**/
 ?>
-
