@@ -19,7 +19,7 @@ function populateRelatedDiscussions(data){
 	// The number of related tags possessed by each post.
 	var tagCount = [];
 	
-	var relatedTags = ["java", "parameter", "jml", "specification", "spec", "preconditions", "post-conditions", "design-by-contract", "assert", "assertions", "assertion"];
+	var relatedTags = ["java", "parameter", "jml", "specification", "spec", "preconditions", "post-conditions", "design-by-contract", "assert", "assertions", "assertion", "apache-commons"];
 	
 	$.each( data.items, function( i, item ){
 		
@@ -60,6 +60,11 @@ function populateRelatedDiscussions(data){
 				if( tag == relatedTags[k] ){
 					numTags++;
 				}
+				else if( relatedTags[k] == "apache-commons" ){
+					if( tag.indexOf(relatedTags[k]) > -1 ){
+						numTags++;
+					}
+				}
 			}
 		});
 		
@@ -93,7 +98,7 @@ function populateRelatedDiscussions(data){
 		rankedWeight[i] = rScore + rViews + rTagCount;
 	});
 	
-	console.log(rankedWeight);
+	//console.log(rankedWeight);
 	//return rankedWeight;
 	return sortedIndices( rankedWeight );
 }
@@ -121,6 +126,7 @@ function sortedIndices( arr ){
 			}
 		}
 	}
-	
+
 	return indices;
 }
+
