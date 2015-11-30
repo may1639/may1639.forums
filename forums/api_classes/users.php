@@ -63,12 +63,18 @@ class User
 		$this->reputation = $row['reputation'];
 		$this->user_id = $row['uid'];
 		$this->website_url = $row['website'];
-		
-		/** /
-		$this-> = $row[''];
-		/**/
-		
-		//var_dump($row);
+	}
+}
+
+	/*
+	function __get($name)
+	{
+		switch ($name)
+			{
+				case "user_type" :
+				echo $this->$user_type;
+				break;
+			}
 	}
 }
 /**/

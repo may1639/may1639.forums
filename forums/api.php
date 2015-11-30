@@ -61,9 +61,39 @@ function process_inname()
 		return_error(400, 'inname', 'bad_parameter');
 	return $_GET["inname"];
 }
-
-function users($database)//what should happen if the path starts with 'users'.
+/**/ 
+function process_ids($ids)
 {
+
+	for($index=0; $index < count($ids); $index++)
+	{
+		if(!preg_match("/[0-9]+(;[0-9]+)*/", $ids[$index]))
+		{
+			return_error(404, 'no method found with this name', 'no_method');
+		}
+	}
+}
+/**/
+
+function users()//what should happen if the path starts with 'users'.
+{
+	global $path, $db;
+
+	if (count($path) > 1)
+	{
+		switch($path[1])
+		{
+			case 'moderators':
+				
+				break;
+			
+			default:
+				$ids = explode(";", $path[1]);
+				process_ids($ids);
+				break;
+		}
+	}
+
 	$order = process_order();
 	
 	$sort = process_sort();
@@ -82,12 +112,12 @@ function users($database)//what should happen if the path starts with 'users'.
 
 	if(isset($_GET["inname"]))
 		$inname = process_inname();
-	
-	$var_to_col_mapping = array("reputation" => "reputation", "creation" => "regdate", "name" => "username", "modified" => "lastactive");
+
+	$var_to_col_mapping = array("ids" => "uid", "reputation" => "reputation", "creation" => "regdate", "name" => "username", "modified" => "lastactive");
 	
 	$query = "SELECT * FROM `mybb_users`";
 	
-	if(isset($fromdate) || isset($todate) || isset($min) || isset($max) || isset($inname))
+	if(isset($fromdate) || isset($todate) || isset($min) || isset($max) || isset($inname) || isset($ids))
 	{
 		$use_and = false;
 		$query .= " WHERE";
@@ -130,11 +160,28 @@ function users($database)//what should happen if the path starts with 'users'.
 			$use_and = true;
 		}
 
-		if($in)
+		if(isset($inname))
 		{
 			if($use_and)
 				$query .= " AND";
 			$query .= " ".$var_to_col_mapping["name"]." LIKE '%".$inname."%'";
+			$use_and = true;
+		}
+
+		if(isset($ids) && (0 < count($ids)))
+		{
+			if($use_and)
+				$query .= " AND";
+			$query .= " ".$var_to_col_mapping["ids"]." IN (";
+			for ($index=0; $index < count($ids); $index++)
+			{
+				if(0 < $index)
+				{
+					$query .= ", ";
+				}
+				$query .= "".$ids[$index];
+			}
+			$query .= ")";
 		}
 	}
 
@@ -143,7 +190,7 @@ function users($database)//what should happen if the path starts with 'users'.
 	if($order == "desc")
 		$query .= " DESC";
 
-	$results = $database->query($query);
+	$results = $db->query($query);
 
 	$pagesize = 30;
 	
@@ -177,12 +224,13 @@ function users($database)//what should happen if the path starts with 'users'.
 	
 	$query .= " LIMIT ".$pagesize." OFFSET ".($page - 1) * $pagesize;
 
-	$results = $database->query($query);
+	$results = $db->query($query);
 	
 	$retval = array();
 	
 	while($row = mysql_fetch_array($results, MYSQL_ASSOC))
 	{
+		$temp = new User($row);
 		array_push($retval, new User($row));
 		//var_dump($row);
 	}
@@ -193,7 +241,7 @@ function users($database)//what should happen if the path starts with 'users'.
 switch($path[0])//selects proper function to call.
 {
 	case 'users':
-		$return_value = array("items" => users($db));
+		$return_value = array("items" => users());
 		break;
 	
 	default:
@@ -202,9 +250,6 @@ switch($path[0])//selects proper function to call.
 
 if(!isset($return_value))
 	return_error(400, 'method', 'method_not_recognized');
-
-//var_dump(json_encode($return_value));
-
 /**/
 //This line of code gzips everything presented as output
 ob_start('ob_gzhandler');
