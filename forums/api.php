@@ -4,8 +4,10 @@ require_once "./global.php";
 require_once "./api_classes/users.php";
 header("access-control-allow-origin: *");
 header('Content-Type: application/json');//JSON-formatting
-$valid_methods = array('users');
+
 $path = explode('/', ltrim($_SERVER['PATH_INFO'], "/"));
+
+/**/
 
 function return_error($id, $message, $name)
 {
@@ -13,6 +15,8 @@ function return_error($id, $message, $name)
 	ob_start('ob_gzhandler');
 	exit(json_encode($return_value));
 }
+
+/**/
 
 function process_order()
 {
@@ -25,6 +29,8 @@ function process_order()
 	return "desc";
 }
 
+/**/
+
 function process_sort()
 {
 	if(isset($_GET["sort"]))
@@ -36,12 +42,16 @@ function process_sort()
 	return "reputation";
 }
 
+/**/
+
 function process_date($date)
 {
 	if((false === filter_input(INPUT_GET, $date, FILTER_VALIDATE_INT)) || $_GET[$date] < 0)
 		return_error(400, $date, 'bad_parameter');
 	return $_GET[$date];
 }
+
+/**/
 
 function process_min_max($sort, $min_max)
 {
@@ -55,13 +65,17 @@ function process_min_max($sort, $min_max)
 	return $_GET[$min_max];
 }
 
+/**/
+
 function process_inname()
 {
 	if(!is_string($_GET["inname"]))
 		return_error(400, 'inname', 'bad_parameter');
 	return $_GET["inname"];
 }
+
 /**/ 
+
 function process_ids($ids)
 {
 
@@ -141,8 +155,8 @@ function users()//what should happen if the path starts with 'users'.
 			if($use_and)
 				$query .= " AND";
 			$query .= " ".$var_to_col_mapping[$sort].">";
-			if($order == "name")
-				$query .= "\'".$min."\'";
+			if($sort == "name")
+				$query .= "'".$min."'";
 			else
 				$query .= $min;
 			$use_and = true;
@@ -153,8 +167,8 @@ function users()//what should happen if the path starts with 'users'.
 			if($use_and)
 				$query .= " AND";
 			$query .= " ".$var_to_col_mapping[$sort]."<";
-			if($order == "name")
-				$query .= "\'".$max."\'";
+			if($sort == "name")
+				$query .= "'".$max."'";
 			else
 				$query .= $max;
 			$use_and = true;
@@ -227,16 +241,19 @@ function users()//what should happen if the path starts with 'users'.
 	$results = $db->query($query);
 	
 	$retval = array();
-	
+
+	//User::get_query("");
+
 	while($row = mysql_fetch_array($results, MYSQL_ASSOC))
 	{
-		$temp = new User($row);
+		$temp = new User($row);		
 		array_push($retval, new User($row));
-		//var_dump($row);
 	}
 
 	return $retval;
 }
+
+
 
 switch($path[0])//selects proper function to call.
 {
