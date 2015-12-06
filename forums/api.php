@@ -1,93 +1,13 @@
 <?php
 define("IN_MYBB", 1);
 require_once "./global.php";
+require_once "./api_classes/util.php";
 require_once "./api_classes/users.php";
 header("access-control-allow-origin: *");
 header('Content-Type: application/json');//JSON-formatting
 
 $path = explode('/', ltrim($_SERVER['PATH_INFO'], "/"));
 
-/**/
-
-function return_error($id, $message, $name)
-{
-	$return_value = array('error_id' => $id, 'error_message' => $message, 'error_name' => $name);
-	ob_start('ob_gzhandler');
-	exit(json_encode($return_value));
-}
-
-/**/
-
-function process_order()
-{
-	if(isset($_GET["order"]))
-	{
-		if(!in_array($_GET["order"], array("asc", "desc")))
-			return_error(400, 'order', 'bad_parameter');
-		return $_GET["order"];
-	}
-	return "desc";
-}
-
-/**/
-
-function process_sort()
-{
-	if(isset($_GET["sort"]))
-	{
-		if(!in_array($_GET["sort"], array("reputation", "creation", "name", "modified")))
-			return_error(400, 'sort', 'bad_parameter');
-		return $_GET["sort"];
-	}
-	return "reputation";
-}
-
-/**/
-
-function process_date($date)
-{
-	if((false === filter_input(INPUT_GET, $date, FILTER_VALIDATE_INT)) || $_GET[$date] < 0)
-		return_error(400, $date, 'bad_parameter');
-	return $_GET[$date];
-}
-
-/**/
-
-function process_min_max($sort, $min_max)
-{
-	if($sort == "name")
-	{
-		if(!is_string($_GET[$min_max]))
-			return_error(400, $min_max, 'bad_parameter');
-	}
-	else if(false === filter_input(INPUT_GET, $min_max, FILTER_VALIDATE_INT))
-			return_error(400, $min_max, 'bad_parameter');
-	return $_GET[$min_max];
-}
-
-/**/
-
-function process_inname()
-{
-	if(!is_string($_GET["inname"]))
-		return_error(400, 'inname', 'bad_parameter');
-	return $_GET["inname"];
-}
-
-/**/ 
-
-function process_ids($ids)
-{
-
-	for($index=0; $index < count($ids); $index++)
-	{
-		if(!preg_match("/[0-9]+(;[0-9]+)*/", $ids[$index]))
-		{
-			return_error(404, 'no method found with this name', 'no_method');
-		}
-	}
-}
-/**/
 
 function users()//what should happen if the path starts with 'users'.
 {
@@ -108,9 +28,11 @@ function users()//what should happen if the path starts with 'users'.
 		}
 	}
 
+	/** /
+
 	$order = process_order();
 	
-	$sort = process_sort();
+	$sort = process_sort(array("reputation", "creation", "name", "modified"));
 	
 	if(isset($_GET["fromdate"]))
 		$fromdate = process_date('fromdate');
@@ -204,6 +126,11 @@ function users()//what should happen if the path starts with 'users'.
 	if($order == "desc")
 		$query .= " DESC";
 
+	echo "\n".$query."\n";
+	/**/
+
+	$query = User::get_query($ids);
+
 	$results = $db->query($query);
 
 	$pagesize = 30;
@@ -242,8 +169,6 @@ function users()//what should happen if the path starts with 'users'.
 	
 	$retval = array();
 
-	//User::get_query("");
-
 	while($row = mysql_fetch_array($results, MYSQL_ASSOC))
 	{
 		$temp = new User($row);		
@@ -267,6 +192,11 @@ switch($path[0])//selects proper function to call.
 
 if(!isset($return_value))
 	return_error(400, 'method', 'method_not_recognized');
+
+/** /
+
+echo "V";
+
 /**/
 //This line of code gzips everything presented as output
 ob_start('ob_gzhandler');

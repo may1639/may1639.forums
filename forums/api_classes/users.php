@@ -1,92 +1,8 @@
 <?php
 define("IN_MYBB", 1);
-//require_once "./global.php";
-//require_once "./users.php";
 header("access-control-allow-origin: *");
+require_once "./api_classes/util.php";
 header('Content-Type: application/json');//JSON-formatting
-
-/** /
-function return_error($id, $message, $name)
-{
-	$return_value = array('error_id' => $id, 'error_message' => $message, 'error_name' => $name);
-	ob_start('ob_gzhandler');
-	exit(json_encode($return_value));
-}
-/** /
-
-function process_order()
-{
-	if(isset($_GET["order"]))
-	{
-		if(!in_array($_GET["order"], array("asc", "desc")))
-			return_error(400, 'order', 'bad_parameter');
-		return $_GET["order"];
-	}
-	return "desc";
-}
-
-/** /
-
-function process_sort()
-{
-	if(isset($_GET["sort"]))
-	{
-		if(!in_array($_GET["sort"], array("reputation", "creation", "name", "modified")))
-			return_error(400, 'sort', 'bad_parameter');
-		return $_GET["sort"];
-	}
-	return "reputation";
-}
-
-/** /
-
-function process_date($date)
-{
-	if((false === filter_input(INPUT_GET, $date, FILTER_VALIDATE_INT)) || $_GET[$date] < 0)
-		return_error(400, $date, 'bad_parameter');
-	return $_GET[$date];
-}
-
-/** /
-
-function process_min_max($sort, $min_max)
-{
-	if($sort == "name")
-	{
-		if(!is_string($_GET[$min_max]))
-			return_error(400, $min_max, 'bad_parameter');
-	}
-	else if(false === filter_input(INPUT_GET, $min_max, FILTER_VALIDATE_INT))
-			return_error(400, $min_max, 'bad_parameter');
-	return $_GET[$min_max];
-}
-
-/** /
-
-function process_inname()
-{
-	if(!is_string($_GET["inname"]))
-		return_error(400, 'inname', 'bad_parameter');
-	return $_GET["inname"];
-}
-
-/** / 
-
-function process_ids($ids)
-{
-
-	for($index=0; $index < count($ids); $index++)
-	{
-		if(!preg_match("/[0-9]+(;[0-9]+)* /", $ids[$index]))
-		{
-			return_error(404, 'no method found with this name', 'no_method');
-		}
-	}
-}
-
-/**/
-
-
 
 /**
 * The class for a user.  Hoping to migrate to separate file location when we know how.
@@ -152,12 +68,111 @@ class User
 	{
 		$type_to_col_mapping = array('user' => 'uid');
 		$id_column = $type_to_col_mapping[$id_type];
-		echo "!".process_order()."!";
-		var_dump($_GET);
-		var_dump($_SERVER);
+		
+		// var_dump($_GET);
+		// var_dump($_SERVER);
+
+		$order = process_order();
+	
+		$sort = process_sort(array("reputation", "creation", "name", "modified"));
+	
+		if(isset($_GET["fromdate"]))
+			$fromdate = process_date('fromdate');
+
+		if(isset($_GET["todate"]))
+			$todate = process_date('todate');
+
+		if(isset($_GET["min"]))
+			$min = process_min_max($sort, 'min');
+
+		if(isset($_GET["max"]))
+			$max = process_min_max($sort, 'max');
+
+		if(isset($_GET["inname"]))
+			$inname = process_inname();
+
+		$var_to_col_mapping = array("ids" => "uid", "reputation" => "reputation", "creation" => "regdate", "name" => "username", "modified" => "lastactive");
+	
+		$query = "SELECT * FROM `mybb_users`";
+		
+		if(isset($fromdate) || isset($todate) || isset($min) || isset($max) || isset($inname) || isset($ids))
+		{
+			$use_and = false;
+			$query .= " WHERE";
+			
+			if(isset($fromdate))
+			{
+				$query .= " ".$var_to_col_mapping["creation"].">".$fromdate;
+				$use_and = true;
+			}
+
+			if(isset($todate))
+			{
+				if($use_and)
+					$query .= " AND";
+				$query .= " ".$var_to_col_mapping["creation"]."<".$todate;
+				$use_and = true;
+			}
+
+			if(isset($min))
+			{
+				if($use_and)
+					$query .= " AND";
+				$query .= " ".$var_to_col_mapping[$sort].">";
+				if($sort == "name")
+					$query .= "'".$min."'";
+				else
+					$query .= $min;
+				$use_and = true;
+			}
+
+			if(isset($max))
+			{
+				if($use_and)
+					$query .= " AND";
+				$query .= " ".$var_to_col_mapping[$sort]."<";
+				if($sort == "name")
+					$query .= "'".$max."'";
+				else
+					$query .= $max;
+				$use_and = true;
+			}
+
+			if(isset($inname))
+			{
+				if($use_and)
+					$query .= " AND";
+				$query .= " ".$var_to_col_mapping["name"]." LIKE '%".$inname."%'";
+				$use_and = true;
+			}
+
+			if(isset($ids) && (0 < count($ids)))
+			{
+				if($use_and)
+					$query .= " AND";
+				$query .= " ".$var_to_col_mapping["ids"]." IN (";
+				for ($index=0; $index < count($ids); $index++)
+				{
+					if(0 < $index)
+					{
+						$query .= ", ";
+					}
+					$query .= "".$ids[$index];
+				}
+				$query .= ")";
+			}
+		}
+		
+		$query .= " ORDER BY ".$var_to_col_mapping[$sort];
+		
+		if($order == "desc")
+			$query .= " DESC";
+		
+		return $query;
 	}
 
 	/**/
+
 	static function func($path)
 	{
 
@@ -169,6 +184,7 @@ class User
 		var_dump($path);
 		echo "\n";
 	}
+
 	/**/
 
 
