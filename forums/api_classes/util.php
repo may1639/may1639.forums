@@ -3,6 +3,52 @@ define("IN_MYBB", 1);
 header("access-control-allow-origin: *");
 header('Content-Type: application/json');//JSON-formatting
 
+
+function paginate_query($query, $n)
+{
+	$pagesize = 30;
+	if(isset($_GET['pagesize']))
+	{
+		if(false === filter_input(INPUT_GET, 'pagesize', FILTER_VALIDATE_INT))
+			return_error(400, 'pagesize', 'bad_parameter');
+		
+		$pagesize = max(0, min(100, $_GET["pagesize"]));
+	}
+
+	
+	if(($pagesize < 1) || ($n < 1))
+		return array();
+
+
+
+	$pagesize = min($pagesize, $n);
+	
+	$hard_limit = $n / $pagesize;
+	
+
+
+	if(0 < $n % $pagesize)
+		$hard_limit++;
+
+	
+
+	$page = 1;
+	
+	if(isset($_GET["page"]))
+	{
+		if(false === filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT))
+			return_error(400, 'page', 'bad_parameter');
+		
+		$page = max(1, min($hard_limit, $_GET["page"]));
+	}
+	
+	// echo "\n$query\n";
+	// return $query;
+	
+	$query .= " LIMIT ".$pagesize." OFFSET ".($page - 1) * $pagesize;
+	return $query;
+}
+
 function return_error($id, $message, $name)
 {
 	$return_value = array('error_id' => $id, 'error_message' => $message, 'error_name' => $name);

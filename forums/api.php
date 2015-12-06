@@ -28,111 +28,13 @@ function users()//what should happen if the path starts with 'users'.
 		}
 	}
 
-	/** /
-
-	$order = process_order();
-	
-	$sort = process_sort(array("reputation", "creation", "name", "modified"));
-	
-	if(isset($_GET["fromdate"]))
-		$fromdate = process_date('fromdate');
-
-	if(isset($_GET["todate"]))
-		$todate = process_date('todate');
-
-	if(isset($_GET["min"]))
-		$min = process_min_max($sort, 'min');
-
-	if(isset($_GET["max"]))
-		$max = process_min_max($sort, 'max');
-
-	if(isset($_GET["inname"]))
-		$inname = process_inname();
-
-	$var_to_col_mapping = array("ids" => "uid", "reputation" => "reputation", "creation" => "regdate", "name" => "username", "modified" => "lastactive");
-	
-	$query = "SELECT * FROM `mybb_users`";
-	
-	if(isset($fromdate) || isset($todate) || isset($min) || isset($max) || isset($inname) || isset($ids))
-	{
-		$use_and = false;
-		$query .= " WHERE";
-		
-		if(isset($fromdate))
-		{
-			$query .= " ".$var_to_col_mapping["creation"].">".$fromdate;
-			$use_and = true;
-		}
-
-		if(isset($todate))
-		{
-			if($use_and)
-				$query .= " AND";
-			$query .= " ".$var_to_col_mapping["creation"]."<".$todate;
-			$use_and = true;
-		}
-
-		if(isset($min))
-		{
-			if($use_and)
-				$query .= " AND";
-			$query .= " ".$var_to_col_mapping[$sort].">";
-			if($sort == "name")
-				$query .= "'".$min."'";
-			else
-				$query .= $min;
-			$use_and = true;
-		}
-
-		if(isset($max))
-		{
-			if($use_and)
-				$query .= " AND";
-			$query .= " ".$var_to_col_mapping[$sort]."<";
-			if($sort == "name")
-				$query .= "'".$max."'";
-			else
-				$query .= $max;
-			$use_and = true;
-		}
-
-		if(isset($inname))
-		{
-			if($use_and)
-				$query .= " AND";
-			$query .= " ".$var_to_col_mapping["name"]." LIKE '%".$inname."%'";
-			$use_and = true;
-		}
-
-		if(isset($ids) && (0 < count($ids)))
-		{
-			if($use_and)
-				$query .= " AND";
-			$query .= " ".$var_to_col_mapping["ids"]." IN (";
-			for ($index=0; $index < count($ids); $index++)
-			{
-				if(0 < $index)
-				{
-					$query .= ", ";
-				}
-				$query .= "".$ids[$index];
-			}
-			$query .= ")";
-		}
-	}
-
-	$query .= " ORDER BY ".$var_to_col_mapping[$sort];
-	
-	if($order == "desc")
-		$query .= " DESC";
-
-	echo "\n".$query."\n";
-	/**/
-
 	$query = User::get_query($ids);
 
 	$results = $db->query($query);
 
+	$query = paginate_query($query, mysql_num_rows($results));
+
+	/** /
 	$pagesize = 30;
 	
 	if(isset($_GET['pagesize']))
@@ -165,6 +67,8 @@ function users()//what should happen if the path starts with 'users'.
 	
 	$query .= " LIMIT ".$pagesize." OFFSET ".($page - 1) * $pagesize;
 
+	/**/
+
 	$results = $db->query($query);
 	
 	$retval = array();
@@ -195,7 +99,7 @@ if(!isset($return_value))
 
 /** /
 
-echo "V";
+echo "\nFIN";
 
 /**/
 //This line of code gzips everything presented as output
