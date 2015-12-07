@@ -84,7 +84,7 @@ class Question
 		global $ID_TYPES;
 
 		if(!in_array($ID_TYPES[$id_type], array("uid", "tid")))
-			unset($ids);
+			$id_type = 'question';
 		
 		$order = process_order();
 
@@ -106,8 +106,10 @@ class Question
 
 
 		$var_to_col_mapping = array("ids" => $ID_TYPES[$id_type], "activity" => "lastpost", "creation" => "dateline");
-	
-		$query = "SELECT * FROM `mybb_threads`";
+
+
+
+		$query = "SELECT * FROM `mybb_threads` ";
 		
 		if(isset($fromdate) || isset($todate) || isset($min) || isset($max) || isset($ids))
 		{

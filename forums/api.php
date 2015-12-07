@@ -12,8 +12,18 @@ header('Content-Type: application/json');//JSON-formatting
 
 $path = explode('/', ltrim($_SERVER['PATH_INFO'], "/"));
 
+// if(preg_match("/^questions\/[0-9]+(;[0-9]+)*\/answers$/", trim($_SERVER['PATH_INFO'], "/")))
+// {
+// 	$return_value = array('Items' =>  answers("question"));	
+// }
 
-function users()//what should happen if the path starts with 'users'.
+// if(preg_match("/^answers\/[0-9]+(;[0-9]+)*\/questions$/", trim($_SERVER['PATH_INFO'], "/")))
+// {
+// 	$return_value = array('Items' =>  questions("answer"));	
+// }
+
+
+function users($id_type='user')//what should happen if the path starts with 'users'.
 {
 	global $path, $db;
 
@@ -26,13 +36,13 @@ function users()//what should happen if the path starts with 'users'.
 				break;
 			
 			default:
-				$ids = explode(";", $path[1]);
+				$ids = $path[1];
 				process_ids($ids);
 				break;
 		}
 	}
 
-	$query = User::get_query($ids);
+	$query = User::get_query(explode(";", $ids), $id_type);
 	$query = paginate_query($query, mysql_num_rows($db->query($query)));
 
 	$results = $db->query($query);
@@ -48,7 +58,7 @@ function users()//what should happen if the path starts with 'users'.
 	return $retval;
 }
 
-function answers()
+function answers($id_type='answer')
 {
 	global $path, $db;
 
@@ -61,7 +71,7 @@ function answers()
 			// 	break;
 			
 			default:
-				$ids = explode(";", $path[1]);
+				$ids = $path[1];
 				process_ids($ids);
 				break;
 		}
@@ -69,7 +79,7 @@ function answers()
 
 	// $results = $db->query("SELECT p.* FROM mybb_posts p, mybb_users u WHERE u.username=\"adcoats\" && p.uid = u.uid");
 	
-	$query = Answer::get_query($ids, "user");
+	$query = Answer::get_query(explode(";", $ids), $id_type);
 	// echo "string";
 	// return $query;
 
@@ -87,7 +97,7 @@ function answers()
 	return $retval;
 }
 
-function questions()
+function questions($id_type='question')
 {
 	global $path, $db;
 
@@ -100,7 +110,7 @@ function questions()
 			// 	break;
 			
 			default:
-				$ids = explode(";", $path[1]);
+				$ids = $path[1];
 				process_ids($ids);
 				break;
 		}
@@ -108,9 +118,8 @@ function questions()
 
 	// $results = $db->query("SELECT p.* FROM mybb_posts p, mybb_users u WHERE u.username=\"adcoats\" && p.uid = u.uid");
 	
-	$query = Question::get_query($ids, "question");
-	// echo "string";
-	// return $query;
+	
+	$query = Question::get_query(explode(";", $ids), $id_type);
 
 	$query = paginate_query($query, mysql_num_rows($db->query($query)));
 
@@ -126,18 +135,31 @@ function questions()
 	return $retval;
 }
 
-switch($path[0])//selects proper function to call.
+/**/
+
+/** /
+if(preg_match("/^answers\/[0-9]+(;[0-9]+)*\/questions$/", trim($_SERVER['PATH_INFO'], "/")))
+{
+	$return_value = array('Items' =>  questions("answer"));	
+}
+/**/
+
+if(preg_match("/^questions\/[0-9]+(;[0-9]+)*\/answers$/", trim($_SERVER['PATH_INFO'], "/")))
+{
+	$return_value = array('Items' =>  answers("question"));	
+}
+else switch($path[0])//selects proper function to call.
 {
 	case 'users':
-		$return_value = array("items" => users());
+		$return_value = array("items" => users("user"));
 		break;
 	
 	case 'answers':
-		$return_value = array("items" => answers());
+		$return_value = array("items" => answers("answer"));
 		break;
 
 	case 'questions':
-		$return_value = array("items" => questions());
+		$return_value = array("items" => questions("questions"));
 		break;
 	
 	default:

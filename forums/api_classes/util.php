@@ -45,6 +45,7 @@ function paginate_query($query, $n)
 
 function return_error($id, $message, $name)
 {
+	return;
 	$return_value = array('error_id' => $id, 'error_message' => $message, 'error_name' => $name);
 	ob_start('ob_gzhandler');
 	exit(json_encode($return_value));
@@ -113,14 +114,17 @@ function process_inname()
 
 function process_ids($ids)
 {
-
+	if(!preg_match("/^[0-9]+(;[0-9]+)*$/", $ids))
+		return_error(404, 'no method found with this name', 'no_method');
+	/** /
 	for($index=0; $index < count($ids); $index++)
 	{
-		if(!preg_match("/[0-9]+(;[0-9]+)*/", $ids[$index]))
+		if(!preg_match("/[0-9]+(;[0-9]+)* /", $ids[$index]))
 		{
 			return_error(404, 'no method found with this name', 'no_method');
 		}
 	}
+	/**/
 }
 
 /**/

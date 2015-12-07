@@ -69,7 +69,7 @@ class User
 		global $ID_TYPES;
 		
 		if(!in_array($ID_TYPES[$id_type], array("uid")))
-			unset($ids);
+			$id_type = 'user';
 
 		$order = process_order();
 	

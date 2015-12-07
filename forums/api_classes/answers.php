@@ -70,7 +70,7 @@ class Answer
 		global $ID_TYPES;
 
 		if(!in_array($ID_TYPES[$id_type], array("uid", "pid", "tid")))
-			unset($ids);
+			$id_type = 'answer';
 		
 
 		$order = process_order();
