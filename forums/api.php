@@ -1,8 +1,12 @@
 <?php
 define("IN_MYBB", 1);
+
 require_once "./global.php";
 require_once "./api_classes/util.php";
 require_once "./api_classes/users.php";
+require_once "./api_classes/questions.php";
+require_once "./api_classes/answers.php";
+
 header("access-control-allow-origin: *");
 header('Content-Type: application/json');//JSON-formatting
 
@@ -44,7 +48,6 @@ function users()//what should happen if the path starts with 'users'.
 	return $retval;
 }
 
-
 function answers()
 {
 	global $path, $db;
@@ -64,13 +67,60 @@ function answers()
 		}
 	}
 
-	$results = $db->query("SELECT p.* FROM mybb_posts p, mybb_users u WHERE u.username=\"adcoats\" && p.uid = u.uid");
+	// $results = $db->query("SELECT p.* FROM mybb_posts p, mybb_users u WHERE u.username=\"adcoats\" && p.uid = u.uid");
+	
+	$query = Answer::get_query($ids, "user");
+	// echo "string";
+	// return $query;
+
+	$query = paginate_query($query, mysql_num_rows($db->query($query)));
+
+	$results = $db->query($query);
 	
 	$retval = array();
 
 	while($row = mysql_fetch_array($results, MYSQL_ASSOC))
 	{		
-		array_push($retval, $row);
+		array_push($retval, new Answer($row));
+	}
+
+	return $retval;
+}
+
+function questions()
+{
+	global $path, $db;
+
+	if (count($path) > 1)
+	{
+		switch($path[1])
+		{
+			// case 'moderators':
+				
+			// 	break;
+			
+			default:
+				$ids = explode(";", $path[1]);
+				process_ids($ids);
+				break;
+		}
+	}
+
+	// $results = $db->query("SELECT p.* FROM mybb_posts p, mybb_users u WHERE u.username=\"adcoats\" && p.uid = u.uid");
+	
+	$query = Question::get_query($ids, "question");
+	// echo "string";
+	// return $query;
+
+	$query = paginate_query($query, mysql_num_rows($db->query($query)));
+
+	$results = $db->query($query);
+	
+	$retval = array();
+
+	while($row = mysql_fetch_array($results, MYSQL_ASSOC))
+	{		
+		array_push($retval, new Question($row));
 	}
 
 	return $retval;
@@ -84,6 +134,10 @@ switch($path[0])//selects proper function to call.
 	
 	case 'answers':
 		$return_value = array("items" => answers());
+		break;
+
+	case 'questions':
+		$return_value = array("items" => questions());
 		break;
 	
 	default:

@@ -3,6 +3,7 @@ define("IN_MYBB", 1);
 header("access-control-allow-origin: *");
 header('Content-Type: application/json');//JSON-formatting
 
+$ID_TYPES = array('user' => 'uid', 'answer' => 'pid', 'question' => 'tid');
 
 function paginate_query($query, $n)
 {
@@ -14,23 +15,16 @@ function paginate_query($query, $n)
 		
 		$pagesize = max(0, min(100, $_GET["pagesize"]));
 	}
-
 	
 	if(($pagesize < 1) || ($n < 1))
 		return array();
 
-
-
 	$pagesize = min($pagesize, $n);
 	
 	$hard_limit = $n / $pagesize;
-	
-
 
 	if(0 < $n % $pagesize)
 		$hard_limit++;
-
-	
 
 	$page = 1;
 	
@@ -41,7 +35,7 @@ function paginate_query($query, $n)
 		
 		$page = max(1, min($hard_limit, $_GET["page"]));
 	}
-	
+
 	// echo "\n$query\n";
 	// return $query;
 	
@@ -62,6 +56,7 @@ function process_order()
 {
 	if(isset($_GET["order"]))
 	{
+
 		if(!in_array($_GET["order"], array("asc", "desc")))
 			return_error(400, 'order', 'bad_parameter');
 		return $_GET["order"];
@@ -79,7 +74,7 @@ function process_sort($mapping)
 			return_error(400, 'sort', 'bad_parameter');
 		return $_GET["sort"];
 	}
-	return "reputation";
+	return $mapping[0];
 }
 
 /**/

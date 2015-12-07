@@ -5,7 +5,7 @@ require_once "./api_classes/util.php";
 header('Content-Type: application/json');//JSON-formatting
 
 /**
-* The class for a user.  Hoping to migrate to separate file location when we know how.
+* The class for a user.
 * Data for this comes from: https://api.stackexchange.com/docs/types/user
 */
 class User
@@ -66,11 +66,10 @@ class User
 
 	static function get_query($ids, $id_type='user')
 	{
-		$type_to_col_mapping = array('user' => 'uid');
-		$id_column = $type_to_col_mapping[$id_type];
+		global $ID_TYPES;
 		
-		// var_dump($_GET);
-		// var_dump($_SERVER);
+		if(!in_array($ID_TYPES[$id_type], array("uid")))
+			unset($ids);
 
 		$order = process_order();
 	
@@ -91,7 +90,7 @@ class User
 		if(isset($_GET["inname"]))
 			$inname = process_inname();
 
-		$var_to_col_mapping = array("ids" => "uid", "reputation" => "reputation", "creation" => "regdate", "name" => "username", "modified" => "lastactive");
+		$var_to_col_mapping = array("ids" => $ID_TYPES[$id_type], "reputation" => "reputation", "creation" => "regdate", "name" => "username", "modified" => "lastactive");
 	
 		$query = "SELECT * FROM `mybb_users`";
 		
@@ -102,7 +101,7 @@ class User
 			
 			if(isset($fromdate))
 			{
-				$query .= " ".$var_to_col_mapping["creation"].">".$fromdate;
+				$query .= " ".$var_to_col_mapping["creation"]." > ".$fromdate;
 				$use_and = true;
 			}
 
@@ -110,7 +109,7 @@ class User
 			{
 				if($use_and)
 					$query .= " AND";
-				$query .= " ".$var_to_col_mapping["creation"]."<".$todate;
+				$query .= " ".$var_to_col_mapping["creation"]." < ".$todate;
 				$use_and = true;
 			}
 
@@ -118,7 +117,7 @@ class User
 			{
 				if($use_and)
 					$query .= " AND";
-				$query .= " ".$var_to_col_mapping[$sort].">";
+				$query .= " ".$var_to_col_mapping[$sort]." > ";
 				if($sort == "name")
 					$query .= "'".$min."'";
 				else
@@ -130,7 +129,7 @@ class User
 			{
 				if($use_and)
 					$query .= " AND";
-				$query .= " ".$var_to_col_mapping[$sort]."<";
+				$query .= " ".$var_to_col_mapping[$sort]." < ";
 				if($sort == "name")
 					$query .= "'".$max."'";
 				else
@@ -170,6 +169,8 @@ class User
 		
 		return $query;
 	}
+
+
 
 	/**/
 
