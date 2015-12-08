@@ -12,6 +12,17 @@ header('Content-Type: application/json');//JSON-formatting
 
 $path = explode('/', ltrim($_SERVER['PATH_INFO'], "/"));
 
+	// $query = "SELECT * FROM package LIMIT 0, 100";
+
+	// $results = $db->query($query);
+	
+	// $return_value = array();
+
+	// while($row = mysql_fetch_array($results, MYSQL_ASSOC))
+	// {		
+	// 	array_push($return_value, $row);
+	// }
+
 // if(preg_match("/^questions\/[0-9]+(;[0-9]+)*\/answers$/", trim($_SERVER['PATH_INFO'], "/")))
 // {
 // 	$return_value = array('Items' =>  answers("question"));	
@@ -42,7 +53,12 @@ function users($id_type='user')//what should happen if the path starts with 'use
 		}
 	}
 
-	$query = User::get_query(explode(";", $ids), $id_type);
+	if(isset($ids))
+	{
+		$ids = explode(";", $ids);
+	}
+
+	$query = User::get_query($ids, $id_type);
 	$query = paginate_query($query, mysql_num_rows($db->query($query)));
 
 	$results = $db->query($query);
@@ -79,7 +95,12 @@ function answers($id_type='answer')
 
 	// $results = $db->query("SELECT p.* FROM mybb_posts p, mybb_users u WHERE u.username=\"adcoats\" && p.uid = u.uid");
 	
-	$query = Answer::get_query(explode(";", $ids), $id_type);
+	if(isset($ids))
+	{
+		$ids = explode(";", $ids);
+	}
+
+	$query = Answer::get_query($ids, $id_type);
 	// echo "string";
 	// return $query;
 
@@ -118,8 +139,12 @@ function questions($id_type='question')
 
 	// $results = $db->query("SELECT p.* FROM mybb_posts p, mybb_users u WHERE u.username=\"adcoats\" && p.uid = u.uid");
 	
+	if(isset($ids))
+	{
+		$ids = explode(";", $ids);
+	}
 	
-	$query = Question::get_query(explode(";", $ids), $id_type);
+	$query = Question::get_query($ids, $id_type);
 
 	$query = paginate_query($query, mysql_num_rows($db->query($query)));
 

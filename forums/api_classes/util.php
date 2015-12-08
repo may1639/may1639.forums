@@ -116,15 +116,6 @@ function process_ids($ids)
 {
 	if(!preg_match("/^[0-9]+(;[0-9]+)*$/", $ids))
 		return_error(404, 'no method found with this name', 'no_method');
-	/** /
-	for($index=0; $index < count($ids); $index++)
-	{
-		if(!preg_match("/[0-9]+(;[0-9]+)* /", $ids[$index]))
-		{
-			return_error(404, 'no method found with this name', 'no_method');
-		}
-	}
-	/**/
 }
 
 /**/
